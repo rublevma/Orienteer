@@ -25,7 +25,8 @@ import org.apache.wicket.extensions.markup.html.repeater.data.table.ISortableDat
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.ResourceModel;
-import org.orienteer.core.CustomAttributes;
+import org.apache.wicket.util.string.Strings;
+import org.orienteer.core.CustomAttribute;
 import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.core.OrienteerWebSession;
 import org.orienteer.core.component.property.DisplayMode;
@@ -39,6 +40,8 @@ import org.orienteer.core.component.visualizer.UIVisualizersRegistry;
 import org.orienteer.core.module.OrienteerLocalizationModule;
 import org.orienteer.core.service.IOClassIntrospector;
 import org.orienteer.core.util.CommonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ru.ydn.wicket.wicketorientdb.model.ODocumentLinksDataProvider;
 import ru.ydn.wicket.wicketorientdb.model.OQueryDataProvider;
@@ -53,6 +56,7 @@ import java.util.*;
  */
 public class OClassIntrospector implements IOClassIntrospector
 {
+	private static final Logger LOG = LoggerFactory.getLogger(OClassIntrospector.class);
 
 	/**
 	 * {@link Predicate} that checks displayable of an specified {@link OProperty}
@@ -62,7 +66,7 @@ public class OClassIntrospector implements IOClassIntrospector
 		public static final PropertyDisplayablePredicate INSTANCE = new PropertyDisplayablePredicate();
 		@Override
 		public boolean apply(OProperty input) {
-			Boolean value = CustomAttributes.DISPLAYABLE.getValue(input);
+			Boolean value = CustomAttribute.DISPLAYABLE.getValue(input);
 			return value!=null?value:false;
 		}
 	}
@@ -75,7 +79,7 @@ public class OClassIntrospector implements IOClassIntrospector
 		public static final GetOrderOfPropertyFunction INSTANCE = new GetOrderOfPropertyFunction();
 		@Override
 		public Integer apply(OProperty input) {
-			return CustomAttributes.ORDER.getValue(input);
+			return CustomAttribute.ORDER.getValue(input);
 		}
 	}
 	
@@ -143,7 +147,7 @@ public class OClassIntrospector implements IOClassIntrospector
 	public ODocument getParent(ODocument doc) {
 		if(doc==null || doc.getSchemaClass()==null) return null;
 		OClass oClass = doc.getSchemaClass();
-		OProperty parent = CustomAttributes.PROP_PARENT.getHierarchicalValue(oClass);
+		OProperty parent = CustomAttribute.PROP_PARENT.getValue(oClass);
 		if(parent!=null) {
 			OType type = parent.getType();
 			Object value = doc.field(parent.getName());
@@ -173,7 +177,7 @@ public class OClassIntrospector implements IOClassIntrospector
 		Set<String> tabs = new HashSet<String>();
 		for(OProperty property: oClass.properties())
 		{
-			String tab = CustomAttributes.TAB.getValue(property);
+			String tab = CustomAttribute.TAB.getValue(property);
 			if(tab==null) tab = DEFAULT_TAB;
 			tabs.add(tab);
 		}
@@ -190,11 +194,11 @@ public class OClassIntrospector implements IOClassIntrospector
 
 			@Override
 			public boolean apply(OProperty input) {
-				boolean ret = safeTab.equals(CustomAttributes.TAB.getValue(input, DEFAULT_TAB));
-				ret = ret && !CustomAttributes.HIDDEN.getValue(input, false);
+				boolean ret = safeTab.equals(CustomAttribute.TAB.getValue(input, DEFAULT_TAB));
+				ret = ret && !CustomAttribute.HIDDEN.getValue(input, false);
 				if(!ret || extended==null) return ret;
 				else {
-					String component = CustomAttributes.VISUALIZATION_TYPE.getValue(input);
+					String component = CustomAttribute.VISUALIZATION_TYPE.getValue(input);
 					if(component==null) return !extended;
 					IVisualizer visualizer = registry.getComponentFactory(input.getType(), component);
 					return (visualizer!=null?visualizer.isExtended():false) == extended;
@@ -222,9 +226,9 @@ public class OClassIntrospector implements IOClassIntrospector
 	public SortableDataProvider<ODocument, String> prepareDataProviderForProperty(
 			OProperty property, IModel<ODocument> documentModel) {
 		SortableDataProvider<ODocument, String> provider;
-		if(CustomAttributes.CALCULABLE.getValue(property, false))
+		if(CustomAttribute.CALCULABLE.getValue(property, false))
 		{
-			String sql = CustomAttributes.CALC_SCRIPT.getValue(property);
+			String sql = CustomAttribute.CALC_SCRIPT.getValue(property);
 			sql = sql.replace("?", ":doc");
 			provider = new OQueryDataProvider<ODocument>(sql).setParameter("doc", documentModel);
 		}
@@ -240,7 +244,7 @@ public class OClassIntrospector implements IOClassIntrospector
 	@Override
 	public OProperty getNameProperty(OClass oClass) {
 		if(oClass==null) return null;
-		OProperty ret = CustomAttributes.PROP_NAME.getHierarchicalValue(oClass);
+		OProperty ret = CustomAttribute.PROP_NAME.getValue(oClass);
 		if(ret!=null) return ret;
 		ret = oClass.getProperty("name");
 		if(ret!=null) return ret;
@@ -254,14 +258,18 @@ public class OClassIntrospector implements IOClassIntrospector
 		}
 		return ret;
 	}
-
+	
 	@Override
 	public String getDocumentName(ODocument doc) {
+		return getDocumentName(doc, null);
+	}
+
+	@Override
+	public String getDocumentName(ODocument doc, OProperty nameProp) {
 		if(doc==null) return Application.get().getResourceSettings().getLocalizer().getString("nodoc", null);
 		else
 		{
-			//TODO: Enhance to cover complex naming cases
-			OProperty nameProp = getNameProperty(doc.getSchemaClass());
+			if(nameProp==null) nameProp = getNameProperty(doc.getSchemaClass());
 			if(nameProp!=null)
 			{
 				Object value = doc.field(nameProp.getName());
@@ -275,7 +283,7 @@ public class OClassIntrospector implements IOClassIntrospector
 					case DATETIME:
 						return OrienteerWebApplication.DATE_TIME_CONVERTER.convertToString((Date)value, locale);
 					case LINK:
-						return getDocumentName((ODocument)value);
+						return value instanceof ODocument?getDocumentName((ODocument)value):null;
 					case EMBEDDEDMAP:
 						Map<String, Object> localizations = (Map<String, Object>)value;
 						Object localized = CommonUtils.localizeByMap(localizations, true, locale.getLanguage(), Locale.getDefault().getLanguage());
@@ -300,8 +308,8 @@ public class OClassIntrospector implements IOClassIntrospector
 		property.setType(oType);
 		switch (oType) {
 			case LINK:
-				ODocument link = doc.field(field);
-				if(link!=null) property.setLinkedClass(link.getSchemaClass());
+				OIdentifiable link = doc.field(field);
+				if(link!=null && link instanceof ODocument) property.setLinkedClass(((ODocument)link).getSchemaClass());
 				break;
 			case LINKBAG:
 				OCollection<OIdentifiable> bag = doc.field(field);
@@ -316,14 +324,14 @@ public class OClassIntrospector implements IOClassIntrospector
 				Collection<ODocument> collection = doc.field(field);
 				if(collection!=null && !collection.isEmpty()) {
 					link = collection.iterator().next();
-					if(link!=null) property.setLinkedClass(link.getSchemaClass());
+					if(link!=null && link instanceof ODocument) property.setLinkedClass(((ODocument)link).getSchemaClass());
 				}
 				break;
 			case LINKMAP:
 				Map<String, ODocument> map = doc.field(field);
 				if(map!=null && !map.isEmpty()) {
 					link = map.values().iterator().next();
-					if(link!=null) property.setLinkedClass(link.getSchemaClass());
+					if(link!=null && link instanceof ODocument) property.setLinkedClass(((ODocument)link).getSchemaClass());
 				}
 				break;
 			case EMBEDDED:
@@ -356,8 +364,8 @@ public class OClassIntrospector implements IOClassIntrospector
 	@Override
 	public void defineDefaultSorting(SortableDataProvider<ODocument, String> provider, OClass oClass) {
 		if(oClass==null) return;
-		OProperty property = CustomAttributes.SORT_BY.getHierarchicalValue(oClass);
-		Boolean order = CustomAttributes.SORT_ORDER.getHierarchicalValue(oClass);
+		OProperty property = CustomAttribute.SORT_BY.getValue(oClass);
+		Boolean order = CustomAttribute.SORT_ORDER.getValue(oClass);
 		SortOrder sortOrder = order==null?SortOrder.ASCENDING:(order?SortOrder.ASCENDING:SortOrder.DESCENDING);
     	if(property==null) {
     		if(order==null) provider.setSort(null);
@@ -365,6 +373,24 @@ public class OClassIntrospector implements IOClassIntrospector
     	} else {
     		provider.setSort(property.getName(), sortOrder);
     	}
+	}
+
+	@Override
+	public OQueryDataProvider<ODocument> getDataProviderForGenericSearch(OClass oClass, IModel<String> queryModel) {
+		String searchSql = CustomAttribute.SEARCH_QUERY.getValue(oClass);
+		String sql=null;
+		if(!Strings.isEmpty(searchSql)) {
+			String upper = searchSql.toUpperCase().trim();
+			if(upper.startsWith("SELECT")) sql = searchSql;
+			else if(upper.startsWith("WHERE")) sql = "select from "+oClass.getName()+" "+searchSql;
+			else {
+				LOG.error("Unrecognized search sql: "+searchSql);
+			}
+		}
+		
+		if(sql==null) sql = "select from "+oClass.getName()+" where any() containstext :query";
+		
+		return new OQueryDataProvider<ODocument>(sql).setParameter("query", queryModel);
 	}
 
 }

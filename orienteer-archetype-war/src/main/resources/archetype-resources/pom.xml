@@ -72,7 +72,22 @@
         </dependency>-->
         <!-- <dependency>
             <groupId>org.orienteer</groupId>
+            <artifactId>orienteer-bpm</artifactId>
+            <version>${dollar}{orienteer.version}</version>
+        </dependency>-->
+        <!-- <dependency>
+            <groupId>org.orienteer</groupId>
             <artifactId>orienteer-devutils</artifactId>
+            <version>${dollar}{orienteer.version}</version>
+        </dependency>-->
+        <!-- <dependency>
+            <groupId>org.orienteer</groupId>
+            <artifactId>orienteer-logger-server</artifactId>
+            <version>${dollar}{orienteer.version}</version>
+        </dependency>-->
+        <!-- <dependency>
+            <groupId>org.orienteer</groupId>
+            <artifactId>orienteer-camel</artifactId>
             <version>${dollar}{orienteer.version}</version>
         </dependency>-->
 		<!-- ORIENTEER TESTS for TESTING -->
@@ -107,6 +122,7 @@
 		</dependency>
 	</dependencies>
 	<build>
+		<finalName>${artifactId}</finalName>
 		<resources>
 			<resource>
 				<filtering>false</filtering>
@@ -200,6 +216,16 @@
 		<repository>
 			<id>Apache Nexus</id>
 			<url>https://repository.apache.org/content/repositories/snapshots/</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>Sonatype Nexus</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
 			<releases>
 				<enabled>false</enabled>
 			</releases>

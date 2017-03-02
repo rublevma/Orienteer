@@ -3,14 +3,18 @@ package org.orienteer.core.component.widget.document;
 import org.apache.wicket.event.IEvent;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.model.IModel;
-import org.orienteer.core.CustomAttributes;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
+import org.orienteer.core.CustomAttribute;
 import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.core.behavior.UpdateOnActionPerformedEventBehavior;
 import org.orienteer.core.component.FAIcon;
 import org.orienteer.core.component.FAIconType;
+import org.orienteer.core.component.command.BookmarkablePageLinkCommand;
 import org.orienteer.core.component.property.DisplayMode;
 import org.orienteer.core.component.visualizer.IVisualizer;
 import org.orienteer.core.event.ActionPerformedEvent;
+import org.orienteer.core.web.schema.OClassPage;
+import org.orienteer.core.web.schema.OPropertyPage;
 import org.orienteer.core.widget.AbstractWidget;
 import org.orienteer.core.widget.Widget;
 
@@ -44,7 +48,7 @@ public class ExtendedVisualizerWidget extends AbstractWidget<ODocument> {
 		super.onInitialize();
 		Form<ODocument> form = new Form<ODocument>("form");
 		OProperty oProperty = propertyModel.getObject();
-		String component = CustomAttributes.VISUALIZATION_TYPE.getValue(oProperty);
+		String component = CustomAttribute.VISUALIZATION_TYPE.getValue(oProperty);
 		form.add(OrienteerWebApplication.get()
 					.getUIVisualizersRegistry()
 					.getComponentFactory(oProperty.getType(), component)
@@ -52,6 +56,12 @@ public class ExtendedVisualizerWidget extends AbstractWidget<ODocument> {
 										propertyModel, 
 										new DynamicPropertyValueModel<Object>(getModel(), propertyModel)));
 		add(form);
+		addCommand(new BookmarkablePageLinkCommand<ODocument>(newCommandId(), "command.gotoProperty", OPropertyPage.class) {
+			@Override
+			public PageParameters getPageParameters() {
+				return OPropertyPage.preparePageParameters(propertyModel.getObject(), DisplayMode.VIEW);
+			}
+		});
 		add(UpdateOnActionPerformedEventBehavior.INSTANCE_ALL_CONTINUE);
 	}
 

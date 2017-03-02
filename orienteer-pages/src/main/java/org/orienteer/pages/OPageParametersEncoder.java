@@ -1,6 +1,9 @@
 package org.orienteer.pages;
 
+import org.apache.wicket.core.request.handler.IPageClassRequestHandler;
+import org.apache.wicket.core.request.handler.IPageRequestHandler;
 import org.apache.wicket.request.Url;
+import org.apache.wicket.request.component.IRequestablePage;
 import org.apache.wicket.request.mapper.parameter.IPageParametersEncoder;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.request.mapper.parameter.PageParametersEncoder;
@@ -39,6 +42,17 @@ public class OPageParametersEncoder extends PageParametersEncoder {
 			pageParameters.add(PAGE_IDENTITY, sv.toString());
 		}
 		return ret;
+	}
+	
+	public static boolean matchHandler(ORID pageIdentity, IPageClassRequestHandler requestHandler) {
+		PageParameters params = null;
+		if(requestHandler instanceof IPageRequestHandler) {
+			IRequestablePage page = ((IPageRequestHandler)requestHandler).getPage();
+			if(page!=null) params = page.getPageParameters();
+		}
+		if(params==null) params = requestHandler.getPageParameters();
+		StringValue sv = params!=null?params.get(PAGE_IDENTITY):null;
+		return sv!=null && pageIdentity!=null?pageIdentity.toString().equals(sv.toOptionalString()):false;
 	}
 	
 }

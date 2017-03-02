@@ -6,12 +6,13 @@ import org.apache.wicket.behavior.AttributeAppender;
 import org.apache.wicket.devutils.debugbar.DebugBar;
 import org.apache.wicket.devutils.inspector.LiveSessionsPage;
 import org.apache.wicket.markup.ComponentTag;
-import org.orienteer.core.CustomAttributes;
+import org.orienteer.core.CustomAttribute;
 import org.orienteer.core.OrienteerWebApplication;
 import org.orienteer.core.module.AbstractOrienteerModule;
 import org.orienteer.core.module.IOrienteerModule;
 import org.orienteer.core.util.OSchemaHelper;
 import org.orienteer.core.web.BasePage;
+import org.orienteer.devutils.web.ToolsPage;
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.record.impl.ODocument;
@@ -43,6 +44,7 @@ public class Module extends AbstractOrienteerModule implements IComponentInitial
 	public void onInitialize(OrienteerWebApplication app, ODatabaseDocument db) {
 		super.onInitialize(app, db);
 		app.mountPages("org.orienteer.devutils.web");
+		WicketConsolePage.setWicketConsolePageImplementation(ToolsPage.class);
 		app.mountPackage("/devutils", LiveSessionsPage.class);
 		app.mountPage("/wicket-console", WicketConsolePage.class);
 		app.registerWidgets("org.orienteer.devutils.component.widget");
@@ -53,6 +55,7 @@ public class Module extends AbstractOrienteerModule implements IComponentInitial
 	public void onDestroy(OrienteerWebApplication app, ODatabaseDocument db) {
 		super.onDestroy(app, db);
 		app.getComponentInitializationListeners().remove(this);
+		WicketConsolePage.setWicketConsolePageImplementation(null);
 		app.unmountPages("org.orienteer.devutils.web");
 		app.unmount("/devutils/"+LiveSessionsPage.class.getSimpleName());
 		app.unmount("/wicket-console");

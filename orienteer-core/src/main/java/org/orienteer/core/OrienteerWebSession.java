@@ -1,6 +1,8 @@
 package org.orienteer.core;
 
 import com.google.common.base.Strings;
+import com.orientechnologies.orient.core.metadata.security.OUser;
+import org.apache.wicket.ISessionListener;
 import org.apache.wicket.Session;
 import org.apache.wicket.protocol.http.WebSession;
 import org.apache.wicket.request.Request;
@@ -10,6 +12,7 @@ import org.orienteer.core.module.PerspectivesModule;
 import com.orientechnologies.orient.core.db.record.OIdentifiable;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 
+import org.orienteer.core.module.UserOnlineModule;
 import ru.ydn.wicket.wicketorientdb.OrientDbWebSession;
 
 import java.util.Locale;
@@ -31,20 +34,27 @@ public class OrienteerWebSession extends OrientDbWebSession
 	{
 		return (OrienteerWebSession)Session.get();
 	}
-	
+
 	@Override
 	public boolean authenticate(String username, String password) {
 		boolean ret = super.authenticate(username, password);
+
+		OrienteerWebApplication app = OrienteerWebApplication.get();
+		UserOnlineModule onlineModule = app.getServiceInstance(UserOnlineModule.class);
 		if(ret)
 		{
 			perspective=null;
+
 			String locale = getDatabase().getUser().getDocument().field(OrienteerLocalizationModule.OPROPERTY_LOCALE);
+			onlineModule.updateOnlineUser(getUser(), true);
+
 			if (!Strings.isNullOrEmpty(locale)) {
 				Locale localeForLanguage = Locale.forLanguageTag(locale);
 				if (localeForLanguage != null) {
 					OrienteerWebSession.get().setLocale(localeForLanguage);
 				}
 			}
+			onlineModule.updateSessionUser(getUser(), getId());
 		}
 		return ret;
 	}
@@ -80,6 +90,11 @@ public class OrienteerWebSession extends OrientDbWebSession
 			
 		}
 	}
+	
+	public boolean isClientInfoAvailable() {
+		return clientInfo!=null;
+	}
+
 
 	@Override
 	public void detach() {

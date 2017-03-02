@@ -27,6 +27,7 @@ import org.orienteer.core.component.visualizer.UIVisualizersRegistry;
 import org.orienteer.core.service.impl.GuiceOrientDbSettings;
 import org.orienteer.core.service.impl.OClassIntrospector;
 import org.orienteer.core.service.impl.OrienteerWebjarsSettings;
+import org.orienteer.core.tasks.OTaskManager;
 import org.orienteer.core.util.LookupResourceHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,8 +50,6 @@ import java.util.ServiceLoader;
  * <h1>Properties</h1>
  * Properties can be retrieved from both files from the local filesystem and
  * files on the Java classpath. 
- * System property {@link #ORIENTEER_PROPERTIES_QUALIFIER_PROPERTY_NAME} defines
- * qualifier which should be used in properties lookup.
  * Highlevel lookup:
  * <ol>
  * <li>If there is a qualifier - lookup by this qualifier</li>
@@ -115,6 +114,12 @@ public class OrienteerModule extends AbstractModule {
 	public Localizer getLocalizer(WebApplication application)
 	{
 		return application.getResourceSettings().getLocalizer();
+	}
+	
+	@Provides
+	public OTaskManager getTaskManager()
+	{
+		return OTaskManager.get();
 	}
 
 	@Provides

@@ -26,6 +26,7 @@ import ru.ydn.wicket.wicketorientdb.model.FunctionModel;
 import ru.ydn.wicket.wicketorientdb.model.NvlModel;
 import ru.ydn.wicket.wicketorientdb.model.ODocumentPropertyModel;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
@@ -39,6 +40,8 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 public abstract class AbstractWidget<T> extends GenericPanel<T> implements ICommandsSupportComponent<T> {
 	
 	private boolean hidden=false;
+	
+	private int loadedWidgetVersion=-1;
 	
 	private RepeatingView commands;
 	
@@ -160,8 +163,9 @@ public abstract class AbstractWidget<T> extends GenericPanel<T> implements IComm
 	public void loadSettings() {
 		ODocument doc = widgetDocumentModel.getObject();
 		if(doc==null) return;
-		hidden = Objects.firstNonNull((Boolean)doc.field(OPROPERTY_HIDDEN), false);
+		hidden = MoreObjects.firstNonNull((Boolean)doc.field(OPROPERTY_HIDDEN), false);
 		getDashboardPanel().getDashboardSupport().loadSettings(this, doc);
+		loadedWidgetVersion = doc.getVersion();
 	}
 	
 	public void saveSettings() {
@@ -178,6 +182,16 @@ public abstract class AbstractWidget<T> extends GenericPanel<T> implements IComm
 		add(new Label("title", getTitleModel()));
 		getDashboardPanel().getDashboardSupport().initWidget(this);
 		loadSettings();
+	}
+	
+	@Override
+	protected void onBeforeRender() {
+		// Reload settings of widget if they were changed
+		ODocument doc = getWidgetDocument();
+		if(doc!=null && doc.getVersion()!=loadedWidgetVersion) {
+			loadSettings();
+		}
+		super.onBeforeRender();
 	}
 	
 	@Override

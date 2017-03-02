@@ -2,7 +2,7 @@ package org.orienteer.core.component.command;
 
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.util.lang.Args;
-import org.orienteer.core.CustomAttributes;
+import org.orienteer.core.CustomAttribute;
 import org.orienteer.core.component.property.DisplayMode;
 import org.orienteer.core.component.table.OrienteerDataTable;
 import org.orienteer.core.web.schema.OPropertyPage;
@@ -12,6 +12,7 @@ import ru.ydn.wicket.wicketorientdb.proto.OPropertyPrototyper;
 import ru.ydn.wicket.wicketorientdb.security.OSecurityHelper;
 import ru.ydn.wicket.wicketorientdb.security.OrientPermission;
 import ru.ydn.wicket.wicketorientdb.security.RequiredOrientResource;
+import ru.ydn.wicket.wicketorientdb.security.RequiredOrientResources;
 
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OProperty;
@@ -19,7 +20,10 @@ import com.orientechnologies.orient.core.metadata.schema.OProperty;
 /**
  * {@link Command} to create {@link OProperty}
  */
-@RequiredOrientResource(value = OSecurityHelper.SCHEMA, permissions=OrientPermission.CREATE)
+@RequiredOrientResources({
+	@RequiredOrientResource(value = OSecurityHelper.SCHEMA, permissions=OrientPermission.CREATE),
+	@RequiredOrientResource(value=OSecurityHelper.CLUSTER, specific="internal", permissions=OrientPermission.CREATE)
+})
 public class CreateOPropertyCommand extends AbstractCreateCommand<OProperty> {
 
 	private IModel<OClass> classModel;
@@ -34,7 +38,7 @@ public class CreateOPropertyCommand extends AbstractCreateCommand<OProperty> {
 	public void onClick() {
 		OClass oClass = classModel.getObject();
 		OProperty newProperty = OPropertyPrototyper.newPrototype(oClass.getName());
-		CustomAttributes.ORDER.setValue(newProperty, findMaxOrder(oClass)+10);
+		CustomAttribute.ORDER.setValue(newProperty, findMaxOrder(oClass)+10);
 		setResponsePage(new OPropertyPage(new OPropertyModel(newProperty)).setModeObject(DisplayMode.EDIT));
 	}
 	
@@ -43,7 +47,7 @@ public class CreateOPropertyCommand extends AbstractCreateCommand<OProperty> {
 		int ret = 0;
 		for(OProperty property: oClass.properties())
 		{
-			Integer order = CustomAttributes.ORDER.getValue(property);
+			Integer order = CustomAttribute.ORDER.getValue(property);
 			if(order!=null && order > ret) ret = order;
 		}
 		return ret;

@@ -57,7 +57,6 @@ public class ODocumentPropertiesWidget extends AbstractModeAwareWidget<ODocument
 					@Override
 					protected Component getValueComponent(String id,
 							IModel<OProperty> rowModel) {
-						//TODO: remove static displaymode
 						return new ODocumentMetaPanel<Object>(id, getModeModel(), ODocumentPropertiesWidget.this.getModel(), rowModel);
 					}
 		};
@@ -84,7 +83,7 @@ public class ODocumentPropertiesWidget extends AbstractModeAwareWidget<ODocument
 		super.onConfigure();
 		IModel<? extends List<? extends OProperty>> propertiesModel = propertiesStructureTable.getCriteriesModel();
 		List<? extends OProperty> properties = propertiesModel.getObject();
-		setVisible(properties!=null && !properties.isEmpty());
+		setVisible((properties!=null && !properties.isEmpty()) ||getModel().getObject().getIdentity().isNew());
 		if(DisplayMode.EDIT.equals(getModeObject()))
 		{
 			saveODocumentCommand.configure();

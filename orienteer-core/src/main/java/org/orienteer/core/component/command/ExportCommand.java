@@ -18,7 +18,7 @@ import com.google.inject.Inject;
 
 /**
  * Command to export data into default format 
- * @param <T>
+ * @param <T> the type of an entity to which this command can be applied
  */
 public class ExportCommand <T> extends Command<T> {
 	
@@ -32,7 +32,7 @@ public class ExportCommand <T> extends Command<T> {
 		super(new ResourceModel("command.export"), table);
 		this.table = table;
 		this.fileNameModel = fileNameModel;
-		setIcon(FAIconType.arrow_circle_up);
+		setIcon(FAIconType.download);
 		setBootstrapType(BootstrapType.PRIMARY);
 	}
 	

@@ -8,7 +8,7 @@ import org.apache.wicket.model.IModel;
 /**
  * {@link GenericPanel} for displaying of {@link Link}s
  *
- * @param <T>
+ * @param <T> the type of the panel's model object
  */
 public abstract class AbstractLinkViewPanel<T> extends GenericPanel<T> {
 
@@ -20,12 +20,16 @@ public abstract class AbstractLinkViewPanel<T> extends GenericPanel<T> {
 			String id,
 			IModel<T> valueModel) {
 		super(id, valueModel);
-		add(link = newLink("link"));
 	}
 	
 	public AbstractLinkViewPanel(String id)
 	{
 		super(id);
+	}
+	
+	@Override
+	protected void onInitialize() {
+		super.onInitialize();
 		add(link = newLink("link"));
 	}
 

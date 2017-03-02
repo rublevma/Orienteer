@@ -20,7 +20,7 @@ import com.orientechnologies.orient.core.record.impl.ODocument;
 /**
  * {@link GenericPanel} to view binary parameters (download)
  *
- * @param <V>
+ * @param <V> the type of the panel's model object
  */
 public class BinaryViewPanel<V> extends GenericPanel<V> {
 	
@@ -75,8 +75,11 @@ public class BinaryViewPanel<V> extends GenericPanel<V> {
 			        @Override
 			        public void writeData(Attributes attributes) throws IOException
 			        {
-			             OutputStream outputStream = attributes.getResponse().getOutputStream();
-			             outputStream.write((byte[])BinaryViewPanel.this.getModelObject());
+			        	 byte[] data = (byte[])BinaryViewPanel.this.getModelObject();
+			        	 if(data!=null) {
+			        		 OutputStream outputStream = attributes.getResponse().getOutputStream();
+			        		 outputStream.write((byte[])BinaryViewPanel.this.getModelObject());
+			        	 }
 			        }
 			     });
 			     return resourceResponse;
